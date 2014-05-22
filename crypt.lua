@@ -127,8 +127,10 @@ function Crypt:get( name )
 		self:_onAccess()
 	end
 
-	return self._data[ tostring( name ) ]
-
+	if self._data then
+		return self._data[ tostring( name ) ]
+	end
+	
 end
 
 --- Sets a piece of data.
@@ -141,7 +143,9 @@ function Crypt:set( name, value )
 		self:_onModify()
 	end
 
-	self._data[ tostring( name ) ] = value
+	if self._data then
+		self._data[ tostring( name ) ] = value
+	end
 
 end
 
