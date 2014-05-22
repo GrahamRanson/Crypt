@@ -375,6 +375,12 @@ function Crypt:_exists()
 	return attributes( self._path, "mode" ) == "file"
 end
 
+--- Hashes key used for encryption / decryption.
+-- @param key Key used for encryption / decryption. It gets hashed internally and is never stored physically. Feel free to hash it yourself as well if you like.
+-- @return The hashed key.
+function Crypt:_hash( key )
+	return digest( sha512, key )
+end
 function Crypt:_onCreate()
 	self._header = self._header or {}
 	self._header.created = self._header.created or os.time()
