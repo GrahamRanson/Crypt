@@ -233,7 +233,7 @@ function Crypt:load( key )
 				self:_error( "No key specified on load." )
 				return nil
 			else
-				self:_warning( "No key specified on load however no OpenSSL plugin not found so maybe you don't want encryption?" )
+				self:_warning( "No key specified on load however no OpenSSL plugin was found so maybe you don't want encryption?" )
 			end
 		end
 
