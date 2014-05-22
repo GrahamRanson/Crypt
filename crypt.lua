@@ -11,6 +11,12 @@
 --																--
 -- Creation Date: May 09, 2014									--
 --																--
+-- Email: graham@grahamranson.co.uk								--
+--																--
+-- Twitter: @GrahamRanson										--
+--																--
+-- Website: www.grahamranson.co.uk								--
+--																--
 -- Copyright (C) 2014 Graham Ranson. All rights reserved.		--
 --																--
 ------------------------------------------------------------------
