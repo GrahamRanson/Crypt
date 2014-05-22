@@ -55,6 +55,8 @@ local DocumentsDirectory = system.DocumentsDirectory
 local sha512 = crypto.sha512
 
 -- Class values
+local extension = "crypt"
+local defaultAlgorithm = "aes-256-ecb"
 
 ------------------
 --	CONSTRUCTOR --
@@ -62,9 +64,8 @@ local sha512 = crypto.sha512
 
 --- Initiates a new Crypt object.
 -- @param name The name of the crypt.
--- @param key Key used for encryption / decryption. It gets hashed internally and is never stored anywhere. Feel free to hash it yourself as well if you like.
 -- @param algorithm Algorithm used for encryption / decryption. Optional, defaults to 'aes-256-ecb'.
--- @return The new object.
+-- @return The new object or nil if there was an issue.
 function Crypt:new( name, key, algorithm )
 
 	local self = {}
@@ -77,12 +78,6 @@ function Crypt:new( name, key, algorithm )
 		return nil
 	end
 
-	-- If no key is specified then the crypt can't be encrypted/decrypted.
-	if not key then
-		self:_error( "No key specified on creation." )
-		return nil
-	end
-
 	-- If the OpenSSL plugin can't be found then no encryption/decryption can take place.
 	if not openssl then
 		self:_warning( "OpenSSL plugin not found. Encryption and decryption can not take place." )
@@ -90,15 +85,14 @@ function Crypt:new( name, key, algorithm )
 
 	-- Private values
 	self._name = name
-	self._extension = "crypt"
-	self._algorithm = algorithm or "aes-256-ecb"
+	self._algorithm = algorithm or defaultAlgorithm
 	self._filename = self._name .. "." .. self:getExtension()
 	self._path = pathForFile( self:getFilename(), DocumentsDirectory )
-	self._key = digest( sha512, key )
-	self._cipher = openssl.get_cipher( self._algorithm )
+
 	if openssl then
 		self._cipher = openssl.get_cipher( self._algorithm )	
 	end
+
 	self._data = {}
 
 	-- If the file doesn't exist then this is the first time it has been created so call the private onCreate function to create the header.
@@ -226,45 +220,79 @@ function Crypt:getType( name )
 	end
 end
 
-
 --- Loads data from disk and decrypts it.
-function Crypt:load()
+-- @param key Key used for encryption / decryption. It gets hashed internally and is never stored physically. Feel free to hash it yourself as well if you like.
+-- @return True if the decryption worked, false otherwise.
+function Crypt:load( key )
 
-	-- Open the file for reading.
-	local file = open( self._path, "r" )
-
-	if file then
+	if openssl then
 	
+		-- If no key is specified then the crypt can't be encrypted/decrypted.
+		if not key then
+			self:_error( "No key specified on load." )
+			return nil
+		end
+
+		-- If a blank key is specified then the crypt can't be encrypted/decrypted.
+		if key == "" then
+			self:_error( "Blank key specified on load." )
+			return nil
+		end
+		
+		-- Hash and remember the key
+		self:setKey( key )
+
+		if not self._key then
+			self:_error( "No key specified on load." )
+			return nil
+		end
+
+	end
+
+	-- If the file exists then we need to load it up and decrupt it
+	if self:_exists() then
+
 		-- Read in the data and close the file.
-		local data = file:read( "*a" )
+		local data = self:_readFile()
 
-		close( file )
-		file = nil
+		-- If we have a cipher then decrypt the data using the hashed key.
+		data = self:_decryptData( data )
+		
+		-- Json decode the data.
+		self._data = decode( data )
 
-		if data then
-			
-			-- Remove the base 64 encoding.
-			data = unb64( data )
-
-			-- If we have a cipher then decrypt the data using the hashed key.
-			if self._cipher then
-				data = self._cipher:decrypt( data, self._key )
-			end
-
-			-- Json decode the data.
-			self._data = decode( data )
+		if self._data then
 
 			-- Load the header table.
 			self._header = self:get( "_header" )
 
 			-- Finally call the private onLoad function to update the header.
 			self:_onLoad()
+			
+			return true
 
 		end
 
-	else
-		self:_error( "Can't open file for reading at path - " .. self._path .. " - if this crypt was just created then you can ignore this message." )
+
+	else -- If no file exists then create an empty data table
+
+		-- The data table
+		self._data = {}
+
+		-- Load the header table.
+		self._header = self:get( "_header" )
+
+		-- Finally call the private onLoad function to update the header.
+		self:_onLoad()
+
+		-- Display a warning about the file not existing
+		self:_warning( "Can't open file for reading at path - " .. self._path .. " - if this crypt was just created then you can ignore this message." )
+	
+		return true
+
 	end
+	
+	return false
 
 end
 
@@ -277,28 +305,39 @@ function Crypt:save()
 	-- Set the header table.
 	self:set( "_header", self._header )
 
-	-- Json encode the data.
-	local data = encode( self._data )
+	-- Write the data to disk.
+	self:_writeFile()
 
-	-- If we have a cipher then encrypt the data with the hashed key.
-	if self._cipher then
-		data = self._cipher:encrypt( data, self._key )
+end
+
+--- Checks if a key will decrypt the current data.
+-- @param key The key to check with.
+-- @return True if the key will decrypt the data, false otherwise.
+function Crypt:verifyKey( key )
+
+	-- First read in the encrypted data.
+	local data = self:_readFile()
+	
+	-- If there is data...
+	if data then
+
+		-- ... then try to decrypt it.
+		data = self:_decryptData( data, key )
+
+		-- If there is still data than the decryption worked.
+		if data then
+
+			-- Now decode the data, if this works then we know it's all good.
+			data = decode( data )
+
+			if data then
+				return true
+			end
+		end
+	
 	end
 
-	-- Base 64 encode the encrypted data.
-	data = b64( data )
-
-	-- Open the file for writing.
-	local file = open( self._path, "w" )
-
-	-- Save out the data and close the file.
-	if file then
-		file:write( data )
-		close( file )
-		file = nil
-	else
-		self:_error( "Can't open file for writing at path - " .. self._path )
-	end
+	return false
 
 end
 
@@ -342,7 +381,20 @@ end
 --- Gets the extension of the crypt file.
 -- @return The extension of the crypt file.
 function Crypt:getExtension()
-	return self._extension
+	return extension
+end
+
+--- Sets the key used for encryption / decryption.
+-- @param key Key used for encryption / decryption. It gets hashed internally and is never stored physically. Feel free to hash it yourself as well if you like.
+function Crypt:setKey( key )
+	self._key = key and self:_hash( key ) or self._key
+end
+
+--- Checks if the crypt file exists.
+-- @return True if it exists, false otherwise.
+function Crypt:exists( name )
+	local path = pathForFile( name .. "." .. self:getExtension(), DocumentsDirectory )
+	return attributes( path, "mode" ) == "file"
 end
 
 -- Deletes the data values from memory.
