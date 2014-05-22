@@ -12,12 +12,12 @@ local crypt = require( "crypt" )
 ```
 ##### Create or load a box
 ```lua
-local box = crypt:new( "sample", "pa55w0rd" )
+local box = crypt:new( "sample" )
 ```
 
 ##### Load the box
 ```lua
-box:load()
+box:load( "pa55w0rd" )
 ```
 
 ##### Set some values
@@ -46,6 +46,13 @@ end
 ##### Set a new value but only if it's higher than the current one
 ```lua
 Crypt:setIfHigher( "score", 34 )
+```
+
+##### Check if a specified key will decrypt the box.
+```lua
+if box:verifyKey( "pa55w0rd" ) then
+  print( "YAY!" )
+end 
 ```
 
 ##### Save the box
