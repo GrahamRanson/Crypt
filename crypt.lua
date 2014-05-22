@@ -357,6 +357,61 @@ end
 --	PRIVATE FUNCTIONS --
 ------------------------
 
+-- Read in the contents of the crypt file.
+-- @return The read in data.
+function Crypt:_readFile()
+
+	-- Open the file for reading.
+	local file = open( self._path, "r" )
+
+	-- If the file exists then we need to load it up and decrypt it
+	if file then
+		
+		-- Read in the data and close the file.
+		local data = file:read( "*a" )
+
+		close( file )
+		file = nil
+
+		if data then
+			
+			-- Remove the base 64 encoding.
+			data = unb64( data )
+
+			-- Return the data
+			return data
+
+		end
+
+	end	
+
+end
+
+-- Write the current data to the crypt file.
+function Crypt:_writeFile()
+
+	-- Json encode the data.
+	local data = encode( self._data )
+
+	-- If we have a cipher then encrypt the data with the hashed key.
+	data = self:_encryptData( data )
+
+	-- Base 64 encode the encrypted data.
+	data = b64( data )
+
+	-- Open the file for writing.
+	local file = open( self._path, "w" )
+
+	-- Save out the data and close the file.
+	if file then
+		file:write( data )
+		close( file )
+		file = nil
+	else
+		self:_error( "Can't open file for writing at path - " .. self._path )
+	end
+
+end
 
 -- Decrypt some data.
 -- @param data The data to decrypt.
