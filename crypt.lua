@@ -357,6 +357,24 @@ end
 --	PRIVATE FUNCTIONS --
 ------------------------
 
+
+-- Decrypt some data.
+-- @param data The data to decrypt.
+-- @return The decrypted data.
+function Crypt:_decryptData( data, key )
+	if self._cipher then
+		return self._cipher:decrypt( data, self._key or self:_hash( key ) )
+	end
+end
+
+-- Encrypt some data.
+-- @param data The data to encrypt.
+function Crypt:_encryptData( data )
+	if self._cipher then
+		return self._cipher:encrypt( data, self._key )
+	end
+end
+
 -- Displays an error to the command line.
 -- @param message The message to display.
 function Crypt:_error( message )
@@ -381,6 +399,8 @@ end
 function Crypt:_hash( key )
 	return digest( sha512, key )
 end
+
+-- Called when the crypt is first created, sets the _header.created value.
 function Crypt:_onCreate()
 	self._header = self._header or {}
 	self._header.created = self._header.created or os.time()
