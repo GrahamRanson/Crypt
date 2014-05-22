@@ -28,7 +28,7 @@ local Crypt = {}
 local Crypt_mt = { __index = Crypt }
 
 -- Required libraries
-local openssl = require( "plugin.openssl" )
+local openssl = pcall( function() require( "plugin.openssl" ) end )
 local json = require( "json" )
 local mime = require( "mime" )
 local lfs = require( "lfs" )
