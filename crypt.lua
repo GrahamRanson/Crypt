@@ -53,7 +53,6 @@ local DocumentsDirectory = system.DocumentsDirectory
 local sha512 = crypto.sha512
 
 -- Class values
-local _version = 0.2
 
 ------------------
 --	CONSTRUCTOR --
@@ -313,11 +312,6 @@ function Crypt:getHeader()
 	return self._header
 end
 
---- Updates the version of this crypt to the current version number.
-function Crypt:updateVersion()
-	self._header.version = _version
-end
-
 --- Sets the iCloud automatic backup flag for this crypt on Mac OS X and iOS systems.
 -- @param sync True if you'd like it to get backed up, false otherwise.
 -- @return True if it was successful and false if not. Nil on Android and Windows. If false then an error string is returned as the second paramater.
@@ -381,10 +375,8 @@ function Crypt:_exists()
 	return attributes( self._path, "mode" ) == "file"
 end
 
--- Called when the crypt is first created, sets the _header.created, and _header.version values.
 function Crypt:_onCreate()
 	self._header = self._header or {}
-	self._header.version = self._header.version or _version
 	self._header.created = self._header.created or os.time()
 end
 
