@@ -483,6 +483,8 @@ end
 function Crypt:_decryptData( data, key )
 	if self._cipher then
 		return self._cipher:decrypt( data, self._key or self:_hash( key ) )
+	else
+		return data
 	end
 end
 
@@ -491,6 +493,8 @@ end
 function Crypt:_encryptData( data )
 	if self._cipher then
 		return self._cipher:encrypt( data, self._key )
+	else
+		return data
 	end
 end
 
