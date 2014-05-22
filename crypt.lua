@@ -3,7 +3,9 @@
 --																--
 -- Description: Crypt allows you to store data permanently 		--
 --				and fully encrypted so it's out of the way 		--
---				of prying eyes.									--
+--				of prying eyes.	If you wish to not use 			--
+--				encryption then don't include the OpenSSL 		--
+--				plugin.											--
 --																--
 -- Requirements: OpenSSL plugin from Corona Labs.				--
 --																--
@@ -83,8 +85,7 @@ function Crypt:new( name, key, algorithm )
 
 	-- If the OpenSSL plugin can't be found then no encryption/decryption can take place.
 	if not openssl then
-		self:_error( "OpenSSL plugin not found." )
-		return nil
+		self:_warning( "OpenSSL plugin not found. Encryption and decryption can not take place." )
 	end
 
 	-- Private values
@@ -95,6 +96,9 @@ function Crypt:new( name, key, algorithm )
 	self._path = pathForFile( self:getFilename(), DocumentsDirectory )
 	self._key = digest( sha512, key )
 	self._cipher = openssl.get_cipher( self._algorithm )
+	if openssl then
+		self._cipher = openssl.get_cipher( self._algorithm )	
+	end
 	self._data = {}
 
 	-- If the file doesn't exist then this is the first time it has been created so call the private onCreate function to create the header.
