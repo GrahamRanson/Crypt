@@ -229,8 +229,12 @@ function Crypt:load( key )
 	
 		-- If no key is specified then the crypt can't be encrypted/decrypted.
 		if not key then
-			self:_error( "No key specified on load." )
-			return nil
+			if openssl then
+				self:_error( "No key specified on load." )
+				return nil
+			else
+				self:_warning( "No key specified on load however no OpenSSL plugin not found so maybe you don't want encryption?" )
+			end
 		end
 
 		-- If a blank key is specified then the crypt can't be encrypted/decrypted.
