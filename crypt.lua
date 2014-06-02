@@ -27,8 +27,16 @@
 local Crypt = {}
 local Crypt_mt = { __index = Crypt }
 
+-- Overridden functions
+local _require = require
+local require = function( name )
+	local lib
+	pcall( function() lib = _require( name ) end )
+	return lib
+end
+
 -- Required libraries
-local openssl = pcall( function() require( "plugin.openssl" ) end )
+local openssl = require( "plugin.openssl" )
 local json = require( "json" )
 local mime = require( "mime" )
 local lfs = require( "lfs" )
@@ -89,7 +97,7 @@ function Crypt:new( name, key, algorithm )
 	self._filename = self._name .. "." .. self:getExtension()
 	self._path = pathForFile( self:getFilename(), DocumentsDirectory )
 
-	if openssl then
+	if openssl and type( openssl ) ~= "boolean" then
 		self._cipher = openssl.get_cipher( self._algorithm )	
 	end
 
@@ -321,7 +329,7 @@ function Crypt:verifyKey( key )
 
 	-- First read in the encrypted data.
 	local data = self:_readFile()
-	
+
 	-- If there is data...
 	if data then
 
@@ -566,7 +574,7 @@ function Crypt:system( event )
 	if type == "applicationSuspend" then
 		self:save()
 	elseif type == "applicationResume" then
-
+		
 	elseif type == "applicationExit" then
 		self:save()
 	elseif type == "applicationStart" then

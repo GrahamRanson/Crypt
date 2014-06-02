@@ -1,0 +1,11 @@
+settings = 
+{
+	plugins =
+    {
+        ["plugin.openssl"] =
+		{
+	    	publisherId = "com.coronalabs",
+		}
+    },  
+
+}
