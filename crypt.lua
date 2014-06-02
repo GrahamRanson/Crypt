@@ -236,14 +236,7 @@ function Crypt:load( key )
 	if openssl then
 	
 		-- If no key is specified then the crypt can't be encrypted/decrypted.
-		if not key then
-			if openssl then
-				self:_error( "No key specified on load." )
-				return nil
-			else
-				self:_warning( "No key specified on load however no OpenSSL plugin was found so maybe you don't want encryption?" )
-			end
-		end
+		self:_checkKey( key, "load" )
 
 		-- If a blank key is specified then the crypt can't be encrypted/decrypted.
 		if key == "" then
@@ -253,11 +246,6 @@ function Crypt:load( key )
 		
 		-- Hash and remember the key
 		self:setKey( key )
-
-		if not self._key then
-			self:_error( "No key specified on load." )
-			return nil
-		end
 
 	end
 
@@ -326,6 +314,9 @@ end
 -- @param key The key to check with.
 -- @return True if the key will decrypt the data, false otherwise.
 function Crypt:verifyKey( key )
+
+	-- If no key is specified then the crypt can't be encrypted/decrypted.
+	self:_checkKey( key, "verifyKey" )
 
 	-- First read in the encrypted data.
 	local data = self:_readFile()
@@ -559,6 +550,17 @@ end
 function Crypt:_onModify()
 	self._header = self._header or {}
 	self._header.modified = os.time()
+end
+
+function Crypt:_checkKey( key, functionName )
+	if not key then
+		if openssl then
+			self:_error( "No key specified during " .. functionName .. "." )
+			return nil
+		else
+			self:_warning( "No key specified during " .. functionName .. " however no OpenSSL plugin was found so maybe you didn't want encryption?" )
+		end
+	end
 end
 
 ---------------------
