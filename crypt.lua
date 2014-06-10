@@ -393,11 +393,12 @@ function Crypt:setKey( key )
 	self._key = key and self:_hash( key ) or self._key
 end
 
---- Checks if the crypt file exists.
+--- Checks if a crypt file exists.
+-- @param name The name of the crypt.
 -- @return True if it exists, false otherwise.
 function Crypt:exists( name )
 	local path = pathForFile( name .. "." .. self:getExtension(), DocumentsDirectory )
-	return attributes( path, "mode" ) == "file"
+	return self:_exists( path )
 end
 
 -- Deletes the data values from memory.
