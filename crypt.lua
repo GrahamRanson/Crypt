@@ -510,9 +510,10 @@ function Crypt:_warning( message )
 end
 
 --- Checks if the crypt file exists.
+-- @param path The path to the ccrypt file. Optional, defaults to the path of this crypt file.
 -- @return True if it exists, false otherwise.
-function Crypt:_exists()
-	return attributes( self._path, "mode" ) == "file"
+function Crypt:_exists( path )
+	return attributes( path or self._path, "mode" ) == "file"
 end
 
 --- Hashes key used for encryption / decryption.
